@@ -1,2 +1,2 @@
 # stubits
-stubits - Simple to Use Broadcast Integration Tiles
+stubits - Simple to Use Broadcast Interaction Tiles
