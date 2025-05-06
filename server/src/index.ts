@@ -29,4 +29,4 @@ wss.on('connection', (ws) => {
 console.log("Test");
 const files: string[] = fs.readdirSync("./");
 console.log(files);
-
+console.log("Test2");

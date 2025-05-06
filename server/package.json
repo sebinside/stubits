@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "concurrently \"tsc --watch\" \"nodemon dist/server.js\""
+    "dev": "nodemon src/index.ts"
   },
   "author": "sebinside",
   "license": "MIT",
@@ -18,8 +18,8 @@
   "devDependencies": {
     "@types/node": "^22.15.12",
     "@types/ws": "^8.18.1",
-    "concurrently": "^9.1.2",
     "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }
