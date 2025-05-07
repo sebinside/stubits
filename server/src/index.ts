@@ -3,13 +3,29 @@ import { WebSocketServer } from "ws";
 import { config } from "dotenv";
 import { SubArchiveService } from "./services/SubArchiveService";
 import chalk from "chalk";
+import { SpotifyClient } from "./providers/spotify/SpotifyClient";
+import SpotifyWebApi from "spotify-web-api-node";
 
 config({ path: "../../.env" });
 
 console.log(chalk.blue("Hello world!"));
 
-const streamSubService = new SubArchiveService("none");
-streamSubService.run();
+// Sub archive service ready to go
+const subArchive = new SubArchiveService("none");
+subArchive.run();
+
+// Spotify usable
+const spotifyClient = new SpotifyClient(
+  9090,
+  process.env.SPOTIFY_CLIENT_ID!,
+  process.env.SPOTIFY_CLIENT_SECRET!,
+  ["user-read-currently-playing", "user-read-playback-state"]
+);
+
+spotifyClient.createClient().then((client) => {
+  console.log("Spotify client created successfully.");
+  SpotifyClient.retrieveCurrentSong(client);
+});
 
 // END FOR TESTING ONLY
 

@@ -1,23 +1,26 @@
 import SpotifyWebApi from "spotify-web-api-node";
 import express, { Router } from "express";
+import open from "open";
 
 export class SpotifyClient {
   private callbackUrl = "";
-  private readonly callbackEndpoint = "nodecg-io-spotify/spotifycallback";
+  private readonly callbackEndpoint = "/nodecg-io-spotify/spotifycallback";
   private readonly defaultState = "defaultState";
   private readonly refreshInterval = 1800000;
+  private readonly router: express.Application;
 
   constructor(
-    private readonly port: string,
+    private readonly port: number,
     private readonly clientId: string,
     private readonly clientSecret: string,
     private readonly scopes: string[],
-    private refreshToken: string | undefined
+    private refreshToken?: string
   ) {
     if (scopes === undefined || scopes.length === 0) {
       throw Error("Scopes are empty. Please specify at least one scope!");
     }
-    this.callbackUrl = `http://localhost:${this.port}/${this.callbackEndpoint}`;
+    this.callbackUrl = `http://localhost:${this.port}${this.callbackEndpoint}`;
+    this.router = express();
   }
 
   async createClient(): Promise<SpotifyWebApi> {
@@ -68,9 +71,7 @@ export class SpotifyClient {
 
   private mountCallBackURL(spotifyApi: SpotifyWebApi) {
     return new Promise((resolve) => {
-      const router = express();
-
-      router.get(this.callbackEndpoint, (req, res) => {
+      this.router.get(this.callbackEndpoint, (req, res) => {
         // Get auth code with is returned as url query parameter if everything was successful
         const authCode: string = req.query.code?.toString() ?? "";
 
@@ -90,7 +91,7 @@ export class SpotifyClient {
         res.send(callbackWebsite);
       });
 
-      router.listen(this.port);
+      this.router.listen(this.port);
     });
   }
 
@@ -112,5 +113,17 @@ export class SpotifyClient {
         }
       );
     }, this.refreshInterval);
+  }
+
+  static async retrieveCurrentSong(
+    spotifyClient: SpotifyWebApi
+  ): Promise<void> {
+    const currentTrack = await spotifyClient.getMyCurrentPlayingTrack();
+    const songName = currentTrack?.body.item?.name;
+    if (currentTrack?.body.currently_playing_type === "track") {
+      const currentSong = currentTrack.body.item as SpotifyApi.TrackObjectFull;
+      const artistName = currentSong.artists[0]?.name;
+      console.log(`Currently playing: ${songName} by ${artistName}`);
+    }
   }
 }
