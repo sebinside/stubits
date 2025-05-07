@@ -4,11 +4,12 @@ import { config } from "dotenv";
 import { SubArchiveService } from "./services/SubArchiveService";
 import chalk from "chalk";
 import { SpotifyClient } from "./providers/spotify/SpotifyClient";
-import SpotifyWebApi from "spotify-web-api-node";
 
 config({ path: "../../.env" });
+const basePort = 42750;
 
 console.log(chalk.blue("Hello world!"));
+console.log(chalk.green(`stubits-minimal base port is ${basePort}.`));
 
 // Sub archive service ready to go
 const subArchive = new SubArchiveService("none");
@@ -16,7 +17,7 @@ subArchive.run();
 
 // Spotify usable
 const spotifyClient = new SpotifyClient(
-  9090,
+  basePort,
   process.env.SPOTIFY_CLIENT_ID!,
   process.env.SPOTIFY_CLIENT_SECRET!,
   ["user-read-currently-playing", "user-read-playback-state"]

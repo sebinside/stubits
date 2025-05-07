@@ -4,7 +4,7 @@ import open from "open";
 
 export class SpotifyClient {
   private callbackUrl = "";
-  private readonly callbackEndpoint = "/nodecg-io-spotify/spotifycallback";
+  private readonly callbackEndpoint = "/spotifycallback";
   private readonly defaultState = "defaultState";
   private readonly refreshInterval = 1800000;
   private readonly router: express.Application;
