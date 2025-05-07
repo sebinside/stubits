@@ -6,7 +6,7 @@ export interface SQLConfig {
 }
 
 export class SQLClient {
-  constructor(private config: SQLConfig) {
+  constructor(private readonly config: SQLConfig) {
     if (config.client === "mysql" || config.client === "pg") {
       if (
         !config.connection.host ||

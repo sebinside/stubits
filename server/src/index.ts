@@ -2,8 +2,11 @@ import fs from "fs";
 import { WebSocketServer } from "ws";
 import { config } from "dotenv";
 import { SubArchiveService } from "./services/SubArchiveService";
+import chalk from "chalk";
 
 config({ path: "../../.env" });
+
+console.log(chalk.blue("Hello world!"));
 
 const streamSubService = new SubArchiveService("none");
 streamSubService.run();

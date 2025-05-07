@@ -5,7 +5,7 @@ import { EventEmitter } from "events";
 export class StreamElementsServiceClient extends EventEmitter {
   private socket: Socket | undefined = undefined;
 
-  constructor(private jwtToken: string, private handleTestEvents: boolean) {
+  constructor(private readonly jwtToken: string, private readonly handleTestEvents: boolean) {
     super();
   }
 
