@@ -7,9 +7,9 @@ export class SpotifyClient {
   private readonly callbackEndpoint = "/spotifycallback";
   private readonly defaultState = "defaultState";
   private readonly refreshInterval = 1800000;
-  private readonly router: express.Application;
 
   constructor(
+    private readonly router: express.Application,
     private readonly port: number,
     private readonly clientId: string,
     private readonly clientSecret: string,
@@ -20,7 +20,6 @@ export class SpotifyClient {
       throw Error("Scopes are empty. Please specify at least one scope!");
     }
     this.callbackUrl = `http://localhost:${this.port}${this.callbackEndpoint}`;
-    this.router = express();
   }
 
   async createClient(): Promise<SpotifyWebApi> {
@@ -90,8 +89,6 @@ export class SpotifyClient {
           "<html><head><script>window.close();</script></head><body>Spotify connection successful! You may close this window now.</body></html>";
         res.send(callbackWebsite);
       });
-
-      this.router.listen(this.port);
     });
   }
 

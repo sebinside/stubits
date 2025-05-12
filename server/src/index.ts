@@ -4,12 +4,16 @@ import { config } from "dotenv";
 import { SubArchiveService } from "./services/SubArchiveService";
 import chalk from "chalk";
 import { SpotifyClient } from "./providers/spotify/SpotifyClient";
+import { TwitchChatClient } from "./providers/twitch/TwitchChatClient";
+import express, { Router } from "express";
 
 config({ path: "../../.env" });
 const basePort = 42750;
 
 console.log(chalk.blue("Hello world!"));
 console.log(chalk.green(`stubits-minimal base port is ${basePort}.`));
+const router = express();
+router.listen(basePort);
 
 // Sub archive service ready to go
 const subArchive = new SubArchiveService("none");
@@ -17,6 +21,7 @@ subArchive.run();
 
 // Spotify usable
 const spotifyClient = new SpotifyClient(
+  router,
   basePort,
   process.env.SPOTIFY_CLIENT_ID!,
   process.env.SPOTIFY_CLIENT_SECRET!,
@@ -27,6 +32,13 @@ spotifyClient.createClient().then((client) => {
   console.log("Spotify client created successfully.");
   SpotifyClient.retrieveCurrentSong(client);
 });
+
+const twitchChatClient = new TwitchChatClient(
+  router,
+  basePort,
+  process.env.TWITCH_CLIENT_ID!,
+  process.env.TWITCH_CLIENT_SECRET!
+);
 
 // END FOR TESTING ONLY
 
