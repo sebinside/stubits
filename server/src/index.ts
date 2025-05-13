@@ -4,7 +4,7 @@ import { config } from "dotenv";
 import { SubArchiveService } from "./services/SubArchiveService";
 import chalk from "chalk";
 import { SpotifyClient } from "./providers/spotify/SpotifyClient";
-import { TwitchChatClient } from "./providers/twitch/TwitchChatClient";
+import { TwitchAuthHandler } from "./providers/twitch/TwitchAuthHandler";
 import express, { Router } from "express";
 
 config({ path: "../../.env" });
@@ -33,7 +33,7 @@ spotifyClient.createClient().then((client) => {
   SpotifyClient.retrieveCurrentSong(client);
 });
 
-const twitchChatClient = new TwitchChatClient(
+const twitchChatClient = new TwitchAuthHandler(
   router,
   basePort,
   process.env.TWITCH_CLIENT_ID!,
