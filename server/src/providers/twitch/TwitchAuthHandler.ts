@@ -1,100 +1,100 @@
 import {
-  AuthProvider,
-  getTokenInfo as twitchGetTokenInfo,
-  StaticAuthProvider,
-  TokenInfo,
-  exchangeCode,
-  RefreshingAuthProvider,
   AccessToken,
+  AuthProvider,
+  exchangeCode,
+  RefreshingAuthProvider
 } from "@twurple/auth";
+import express from "express";
 import open from "open";
-import express, { Router } from "express";
-import { ChatClient } from "@twurple/chat";
-import { ApiClient } from "@twurple/api";
-import { EventSubWsListener } from "@twurple/eventsub-ws";
 
 export class TwitchAuthHandler {
-  private userId: string | null = null;
-  private tokenData: AccessToken | null = null;
+  private static readonly oAuthURL = "https://id.twitch.tv/oauth2/authorize";
+  private static readonly callbackPath = "twitchcallback";
+  private static readonly callbackWebsiteHTML =
+    "<html><head><script>//window.close();</script></head><body>Twitch OAuth callback received! You may close this window now.</body></html>";
+
+  private readonly callbackURL: string;
+  private accessToken: AccessToken | undefined;
+  private authProvider: AuthProvider | undefined;
+  private oAuthCode: string | undefined;
+
 
   constructor(
-    private readonly router: express.Application,
+    private readonly router: express.Router,
     private readonly port: number,
     private readonly clientId: string,
-    private readonly clientSecret: string
+    private readonly clientSecret: string,
+    private readonly scopes: string[]
   ) {
+    this.callbackURL = `http://localhost:${this.port}/${TwitchAuthHandler.callbackPath}`
+  }
+
+  public async getAuthProvider(): Promise<AuthProvider | undefined> {
+    if (!this.authProvider) {
+      await this.authenticate();
+    }
+
+    return this.authProvider;
+  }
+
+  private async authenticate(): Promise<boolean> {
+    if (this.authProvider) {
+      return true;
+    }
+
     const randomState = crypto.randomUUID();
-    const codeGrantFlowURL = `https://id.twitch.tv/oauth2/authorize?response_type=code&client_id=${this.clientId}&redirect_uri=http://localhost:${this.port}/twitchcallback&state=${randomState}&scope=chat:read+chat:edit+channel:read:redemptions`;
+    const codeGrantFlowURL = `${TwitchAuthHandler.oAuthURL}?response_type=code&client_id=${this.clientId}&redirect_uri=${this.callbackURL}&state=${randomState}&scope=${this.createScopeRequest()}`;
 
-    this.router.get("/twitchcallback", async (req, res) => {
+    this.router.get(`/${TwitchAuthHandler.callbackPath}`, (req, res) => {
       if (randomState !== req.query.state) {
-        throw new Error("State does not match.");
+        res.status(403).send("State does not match.");
+      } else {
+        this.oAuthCode = req.query.code ? req.query.code.toString() : undefined;
+        res.send(TwitchAuthHandler.callbackWebsiteHTML);
       }
-
-      const code = req.query.code?.toString() ?? "";
-      const redirectURL = `http://localhost:${this.port}/twitchcallback`;
-      await exchangeCode(clientId, clientSecret, code, redirectURL).then(
-        (data) => {
-          const accessToken = data.accessToken;
-          const refreshToken = data.refreshToken;
-
-          this.tokenData = {
-            accessToken,
-            refreshToken,
-            scope: data.scope,
-            expiresIn: data.expiresIn,
-            obtainmentTimestamp: Date.now(),
-          };
-
-          const authProvider = new RefreshingAuthProvider({
-            clientId: this.clientId,
-            clientSecret: this.clientSecret,
-          });
-
-          authProvider.onRefresh((_, newTokenData) => {
-            this.tokenData = newTokenData;
-          });
-
-          authProvider.addUserForToken(this.tokenData, ["chat"]);
-
-          const apiClient = new ApiClient({
-            authProvider,
-          });
-
-          apiClient.users.getUserByName("skate702").then((user) => {
-            this.userId = user?.id || null;
-
-            const listener = new EventSubWsListener({
-              apiClient,
-            });
-
-            listener.start();
-
-            listener.onChannelRedemptionAdd(this.userId!, (event) => {
-              console.log(
-                `New channel redemption: ${event.rewardId}, ${event.rewardTitle}`
-              );
-            });
-          });
-
-          const chatClient = new ChatClient({
-            authProvider,
-            channels: ["#skate702"],
-          });
-
-          chatClient.connect();
-
-          chatClient.onMessage((_, user, message) => {
-            console.log(`Received message from ${user}: ${message}`);
-          });
-        }
-      );
-
-      const callbackWebsite =
-        "<html><head><script>window.close();</script></head><body>Twitch connection successful! You may close this window now.</body></html>";
-      res.send(callbackWebsite);
     });
 
+    // Is there no better way to do this on Windows?
     open(codeGrantFlowURL);
+    await new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (this.oAuthCode) {
+          clearInterval(interval);
+          resolve(true);
+        }
+      }, 100);
+    });
+
+    if (!this.oAuthCode) {
+      return false;
+    }
+
+    this.accessToken = await exchangeCode(this.clientId, this.clientSecret, this.oAuthCode, this.callbackURL);
+
+    this.authProvider = this.createAuthProvider();
+    return !!this.authProvider;
+  }
+
+  private createScopeRequest(): string {
+    return this.scopes.join("+");
+  }
+
+  private createAuthProvider(): AuthProvider | undefined {
+    if (!this.accessToken) {
+      return undefined;
+    }
+
+    const authProvider = new RefreshingAuthProvider({
+      clientId: this.clientId,
+      clientSecret: this.clientSecret,
+    });
+
+    authProvider.onRefresh((_, newTokenData) => {
+      this.accessToken = newTokenData;
+    });
+
+    authProvider.addUserForToken(this.accessToken, ["chat"]);
+
+    return authProvider;
   }
 }
