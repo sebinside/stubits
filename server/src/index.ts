@@ -8,9 +8,19 @@ import { TwitchAuthHandler } from "./providers/twitch/TwitchAuthHandler";
 import { TwitchChatClient } from "./providers/twitch/TwitchChatClient";
 import { TwitchEventSubClient } from "./providers/twitch/TwitchEventSubClient";
 import { SubArchiveService } from "./services/SubArchiveService";
+import { exit } from "process";
+import { Logger } from "./logger";
 
 config({ path: "../../.env" });
 const basePort = 42750;
+
+const logger = new Logger("warn");
+logger.run.core.debug("asdf", "Starting stubits-minimal server.");
+logger.setup.service.debug("index", "Starting stubits-minimal server.");
+logger.run.tile.debug("xyz", "Starting stubits-minimal server.");
+logger.setup.core.info("index", "Starting stubits-minimal server.");
+
+exit(0);
 
 console.log(chalk.blue("Hello world!"));
 console.log(chalk.green(`stubits-minimal base port is ${basePort}.`));
