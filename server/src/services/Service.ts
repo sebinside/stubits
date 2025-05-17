@@ -1,7 +1,8 @@
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 
 export abstract class Service {
-  protected wss: WebSocketServer | undefined = undefined;
+  private wss: WebSocketServer | undefined = undefined;
+  protected webSocket : WebSocket | undefined = undefined;
 
   public constructor(public readonly webSocketPort: number | "none") {
     if (
@@ -29,6 +30,7 @@ export abstract class Service {
 
     this.wss.on("connection", (ws) => {
       console.log(`Client connected to service "${this.constructor.name}"`);
+      this.webSocket = ws;
 
       ws.on("message", (message) => {
         console.log(`Service "${this.constructor.name}" received: ${message}`);
@@ -45,5 +47,6 @@ export abstract class Service {
 
   protected abstract onWebSocketServerMessage(message: string): void;
 
+  // TODO: Rename signature
   public abstract run(): void;
 }

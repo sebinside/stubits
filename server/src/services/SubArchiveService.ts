@@ -4,17 +4,11 @@ import { Knex } from "knex";
 import { SQLClient, SQLConfig } from "../providers/sql/SQLClient";
 
 export class SubArchiveService extends Service {
-  private streamElementsClient: StreamElementsServiceClient;
   private sqlClient: Knex | undefined = undefined;
   private sqlConfig: SQLConfig;
 
-  constructor(webSocketPort: "none") {
+  constructor(webSocketPort: "none", private readonly streamElementsClient: StreamElementsServiceClient) {
     super(webSocketPort);
-
-    this.streamElementsClient = new StreamElementsServiceClient(
-      process.env.STREAM_ELEMENTS_JWT_TOKEN || "",
-      false
-    );
 
     this.sqlConfig = {
       client: process.env.SQL_CLIENT || "",

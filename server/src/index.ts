@@ -10,25 +10,31 @@ import { TwitchEventSubClient } from "./providers/twitch/TwitchEventSubClient";
 import { SubArchiveService } from "./services/SubArchiveService";
 import { exit } from "process";
 import { Logger } from "./logger";
+import { StreamBar } from "./services/StreamBar";
+import { StreamElementsServiceClient } from "./providers/streamelements/StreamElementsServiceClient";
+import { StaticAuthProvider } from "@twurple/auth";
 
 config({ path: "../../.env" });
 const basePort = 42750;
 
-const logger = new Logger("warn");
+const logger = new Logger("debug");
 logger.run.core.debug("asdf", "Starting stubits-minimal server.");
 logger.setup.service.debug("index", "Starting stubits-minimal server.");
 logger.run.tile.debug("xyz", "Starting stubits-minimal server.");
 logger.setup.core.info("index", "Starting stubits-minimal server.");
-
-exit(0);
 
 console.log(chalk.blue("Hello world!"));
 console.log(chalk.green(`stubits-minimal base port is ${basePort}.`));
 const router = express();
 router.listen(basePort);
 
+const streamElementsClient = new StreamElementsServiceClient(
+  process.env.STREAM_ELEMENTS_JWT_TOKEN || "",
+  false
+);
+
 // Sub archive service ready to go
-const subArchive = new SubArchiveService("none");
+const subArchive = new SubArchiveService("none", streamElementsClient);
 subArchive.run();
 
 // Spotify usable
@@ -62,7 +68,8 @@ twitchAuth.getAuthProvider().then((authProvider) => {
     // Setup Chat
     const twitchChatClient = new TwitchChatClient(
       authProvider,
-      "skate702"
+      "#skate702",
+      logger
     );
 
     twitchChatClient.getChatClient().onMessage((_, user, message) => {
@@ -81,6 +88,21 @@ twitchAuth.getAuthProvider().then((authProvider) => {
       twitchEventSubClient.onRedemption((awardName, userName) => {
         console.log(`New channel redemption: ${awardName}, ${userName}`);
       });
+
+      const botChatClient = new TwitchChatClient(new StaticAuthProvider(
+        process.env.TWITCH_CLIENT_ID!,
+        process.env.TWITCH_BOT!
+      ), "#skate702", logger);
+
+      const streamBar = new StreamBar(
+        basePort + 1,
+        spotifyClient,
+        streamElementsClient,
+        botChatClient,
+        logger
+      );
+
+      streamBar.run();
     });
   };
 });

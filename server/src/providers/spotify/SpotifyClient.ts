@@ -3,11 +3,13 @@ import express, { Router } from "express";
 import open from "open";
 
 export class SpotifyClient {
-  private callbackUrl = "";
   private readonly callbackEndpoint = "/spotifycallback";
   private readonly defaultState = "defaultState";
   private readonly refreshInterval = 1800000;
-
+  
+  private callbackUrl = "";
+  private spotifyApiClient: SpotifyWebApi | undefined;
+  
   constructor(
     private readonly router: express.Application,
     private readonly port: number,
@@ -23,6 +25,10 @@ export class SpotifyClient {
   }
 
   async createClient(): Promise<SpotifyWebApi> {
+    if(this.spotifyApiClient) {
+      return this.spotifyApiClient;
+    }
+
     console.log("Spotify service connecting...");
 
     const spotifyApi = new SpotifyWebApi({
@@ -65,6 +71,7 @@ export class SpotifyClient {
     console.log("Successfully connected to Spotify.");
 
     this.startTokenRefreshing(spotifyApi);
+    this.spotifyApiClient = spotifyApi;
     return spotifyApi;
   }
 
