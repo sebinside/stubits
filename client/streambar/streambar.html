@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Stream Bar</title>
+    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet" href="../common/css/all.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  </head>
+  <body>
+    <div id="bar" v-cloak>
+      <div class="content active">
+        <i class="fas fa-music"></i>
+        <span class="contentText"> {{ currentSong }} </span>
+      </div>
+      <div class="content">
+        <i class="fas fa-heart"></i>
+        <span class="contentText"> {{ lastSubscriber }} </span>
+      </div>
+      <div class="content">
+        <i class="fas fa-glass-cheers"></i>
+        <span class="contentText"> {{ lastCheer }} </span>
+      </div>
+      <div class="content">
+        <i class="fas fa-gift"></i>
+        <span class="contentText"> {{ lastBomb }} </span>
+      </div>
+      <div class="content">
+        <i class="fas fa-money-bill-wave"></i>
+        <span class="contentText"> {{ lastTip }} </span>
+      </div>
+      <div class="content">
+        <i class="fas fa-circle-info"></i>
+        <span class="contentText"> sebastianhahner.de </span>
+      </div>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      const ANIMATION_INTERVAL_IN_MS = 10000;
+
+      createApp({
+        setup() {
+          let currentSong = ref("");
+          let lastSubscriber = ref("");
+          let lastCheer = ref("");
+          let lastTip = ref("");
+          let lastBomb = ref("");
+
+          let socket;
+
+          socket = new WebSocket("ws://localhost:42752");
+
+          socket.addEventListener("open", () => {
+            console.log("Connected to WebSocket server");
+          });
+
+          socket.addEventListener("message", (event) => {
+            console.log("Message from server:", event.data);
+
+            const data = JSON.parse(event.data);
+            if (data.artistName && data.songName) {
+              currentSong.value = `${data.artistName} - ${data.songName}`;
+            }
+            if (data.lastSubscriber) {
+              lastSubscriber.value = data.lastSubscriber;
+            }
+            if (data.lastCheer) {
+              lastCheer.value = data.lastCheer;
+            }
+            if (data.lastTip) {
+              lastTip.value = data.lastTip;
+            }
+            if (data.lastBomb) {
+              lastBomb.value = data.lastBomb;
+            }
+          });
+
+          socket.addEventListener("close", () => {
+            console.log("WebSocket connection closed");
+          });
+
+          return {
+            currentSong,
+            lastSubscriber,
+            lastCheer,
+            lastTip,
+            lastBomb,
+          };
+        },
+      }).mount("#bar");
+
+      function startAnimation() {
+        const slides = document.querySelectorAll("#bar .content");
+        let currentSlide = 0;
+
+        const goToSlide = (nextSlideIdx) => {
+          let slide = slides[currentSlide];
+
+          if (slide) {
+            slide.classList.remove("active");
+          }
+          currentSlide = (nextSlideIdx + slides.length) % slides.length;
+          slide = slides[currentSlide];
+
+          // Don't show the slide if it has no content (e.g. when not data fetched yet)
+          if (slide && slide.innerText.trim().length === 0) {
+            goToSlide(currentSlide + 1);
+            return;
+          }
+
+          if (slide) {
+            slide.classList.add("active");
+
+            const text = slide.getElementsByClassName("contentText")[0];
+            if (text) {
+              if (slide.innerText.trim().length >= 16) {
+                text.classList.add("longContent");
+              } else {
+                text.classList.remove("longContent");
+              }
+            }
+          }
+        };
+
+        setInterval(
+          () => goToSlide(currentSlide + 1),
+          ANIMATION_INTERVAL_IN_MS
+        );
+        goToSlide(0);
+      }
+
+      startAnimation();
+    </script>
+  </body>
+</html>

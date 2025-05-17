@@ -1,0 +1,82 @@
+.fa-user-friends {
+    color: #4fbfeb;
+}
+
+.fa-music {
+    color: #ffe424;
+}
+
+.fa-heart {
+    color: #EB6662;
+}
+
+.fa-glass-cheers {
+    color: #C499FF;
+}
+
+.fa-gift {
+    color: #82f3ff;
+}
+
+.fa-money-bill-wave {
+    color: #6cff55;
+}
+
+.fa-circle-info {
+    color: #ff9d3a;
+}
+
+#bar {
+    height: 47px;
+    width: 370px;
+    margin: 50px;
+    font-family: "DIN 1451 Com Engschrift", sans-serif;
+    float: left;
+}
+
+#symbol {
+    display: inline-block;
+    height: 47px;
+    width: 50px;
+    padding-left: 5px;
+    padding-right: 3px;
+    font-size: 28pt;
+    padding-top: 2px;
+    position: absolute;
+}
+
+.content {
+    display: inline-block;
+    width: 300px;
+    font-size: 28pt;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    position: absolute;
+    padding-left: 60px;
+    padding-top: 0px;
+
+    opacity: 0;
+    transition: all 1s;
+}
+
+.contentText {
+    margin-left: 5px;
+}
+
+.active {
+    opacity: 1;
+}
+
+.longContent {
+    font-size: 20pt;
+}
+
+body {
+    color: #EEE;
+}
+
+/* Hide site content until vue.js has compiled all templates. */
+[v-cloak] {
+    display: none;
+}

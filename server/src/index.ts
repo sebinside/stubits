@@ -95,7 +95,7 @@ twitchAuth.getAuthProvider().then((authProvider) => {
       ), "#skate702", logger);
 
       const streamBar = new StreamBar(
-        basePort + 1,
+        42752,
         spotifyClient,
         streamElementsClient,
         botChatClient,
