@@ -32,13 +32,13 @@ export class TwitchEventSubClient {
         this.listener.start();
     }
 
-    public async onRedemption(callback: (awardName: string, userName: string) => void): Promise<void> {
+    public async onRedemption(callback: (rewardTitle: string, userName: string, message: string) => void): Promise<void> {
         if (!this.listener) {
             throw new Error("Listener not started");
         }
 
         this.listener.onChannelRedemptionAdd(this.user!.id, (event) => {
-            callback(event.rewardTitle, event.userName);
+            callback(event.rewardTitle, event.userName, event.input);
         });
     }
 

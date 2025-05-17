@@ -13,6 +13,7 @@ import { Logger } from "./logger";
 import { StreamBar } from "./services/StreamBar";
 import { StreamElementsServiceClient } from "./providers/streamelements/StreamElementsServiceClient";
 import { StaticAuthProvider } from "@twurple/auth";
+import { StreamTodo } from "./services/StreamTodo";
 
 config({ path: "../../.env" });
 const basePort = 42750;
@@ -85,8 +86,8 @@ twitchAuth.getAuthProvider().then((authProvider) => {
     twitchEventSubClient.start().then(() => {
       console.log("Twitch EventSub client started successfully.");
 
-      twitchEventSubClient.onRedemption((awardName, userName) => {
-        console.log(`New channel redemption: ${awardName}, ${userName}`);
+      twitchEventSubClient.onRedemption((rewardTitle, userName, _) => {
+        console.log(`New channel redemption: ${rewardTitle}, ${userName}`);
       });
 
       const botChatClient = new TwitchChatClient(new StaticAuthProvider(
@@ -103,6 +104,14 @@ twitchAuth.getAuthProvider().then((authProvider) => {
       );
 
       streamBar.run();
+
+      const streamTodo = new StreamTodo(
+        42753,
+        twitchEventSubClient,
+        logger
+      );
+
+      streamTodo.run();
     });
   };
 });
