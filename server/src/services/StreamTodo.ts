@@ -1,6 +1,7 @@
 import { Logger } from "../logger";
 import { TwitchEventSubClient } from "../providers/twitch/TwitchEventSubClient";
 import { Service } from "./Service";
+import { WebSocket } from "ws";
 
 type UITask = {
     done: boolean
@@ -23,10 +24,23 @@ export class StreamTodo extends Service {
         super(webSocketPort);
     }
 
-    protected onWebSocketServerMessage(message: string): void {
+    protected onWebSocketServerMessage(ws: WebSocket, message: string): void {
         const parsedMessage = JSON.parse(message) as StreamTodoMessageFormat;
         this.state = parsedMessage;
         this.logger.run.service.info("StreamTodo", "New state received.");
+
+        // Broadcast the new state to all other connected clients
+        for (const socket of this.webSockets) {
+            if (socket !== ws) {
+                socket.send(JSON.stringify(this.state));
+            }
+        }
+
+    }
+
+    protected onWebSocketOpenConnection(ws: WebSocket): void {
+        // Initialize by broadcasting the server's knowledge of the state
+        ws.send(JSON.stringify(this.state));
     }
 
     public run(): void {
@@ -46,7 +60,7 @@ export class StreamTodo extends Service {
                 }
 
                 this.state.checkMarkHue = newColorValue;
-                this.webSocket?.send(JSON.stringify(this.state));
+                this.webSockets.forEach(ws => ws.send(JSON.stringify(this.state)));
             }
         });
     }

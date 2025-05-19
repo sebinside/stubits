@@ -1,8 +1,9 @@
 import { WebSocket, WebSocketServer } from "ws";
 
+// TODO: Add StatefulService that has a state that is broadcasted to all clients
 export abstract class Service {
   private wss: WebSocketServer | undefined = undefined;
-  protected webSocket : WebSocket | undefined = undefined;
+  protected webSockets: Set<WebSocket> = new Set();
 
   public constructor(public readonly webSocketPort: number | "none") {
     if (
@@ -28,24 +29,30 @@ export abstract class Service {
       `WebSocket server of service "${this.constructor.name}" started on port ${this.webSocketPort}`
     );
 
-    this.wss.on("connection", (ws) => {
+    this.wss.on("connection", (ws : WebSocket) => {
       console.log(`Client connected to service "${this.constructor.name}"`);
-      this.webSocket = ws;
+      this.webSockets.add(ws);
+      this.onWebSocketOpenConnection(ws);
 
       ws.on("message", (message) => {
         console.log(`Service "${this.constructor.name}" received: ${message}`);
-        this.onWebSocketServerMessage(message.toString());
+        this.onWebSocketServerMessage(ws, message.toString());
       });
 
       ws.on("close", () => {
         console.log(
           `Client disconnected from service "${this.constructor.name}"`
         );
+        this.webSockets.delete(ws);
       });
     });
   }
 
-  protected abstract onWebSocketServerMessage(message: string): void;
+  protected onWebSocketServerMessage(ws: WebSocket, message: string): void {}
+
+  protected onWebSocketOpenConnection(ws: WebSocket): void {
+    // by default, do nothing
+  };
 
   // TODO: Rename signature
   public abstract run(): void;

@@ -25,9 +25,6 @@ export class StreamBar extends Service {
     };
     private lastGift = "";
 
-    protected onWebSocketServerMessage(_: string): void {
-        // Ignore all incoming messages
-    }
     async run(): Promise<void> {
         await this.initSpotifyClient();
         this.initStreamelementsClient();
@@ -103,6 +100,6 @@ export class StreamBar extends Service {
     }
 
     private sendUpdates() {
-        this.webSocket?.send(JSON.stringify(this.streamBarInfo));
+        this.webSockets.forEach(ws => ws.send(JSON.stringify(this.streamBarInfo)));
     }
 }

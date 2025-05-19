@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Based on: https://moderncss.dev/pure-css-custom-checkbox-style/ -->
+    <meta charset="UTF-8" />
+    <title>TODO Overlay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="overlay.css" />
+  </head>
+
+  <body>
+    <form action="" id="mainForm">
+      <label class="form-control hiddenEntry" id="label0">
+        <input type="checkbox" name="checkbox" id="task0" onclick="check(0)" />
+        <span id="description0"></span>
+      </label>
+
+      <label class="form-control hiddenEntry" id="label1">
+        <input type="checkbox" name="checkbox" id="task1" onclick="check(1)" />
+        <span id="description1"></span>
+      </label>
+
+      <label class="form-control hiddenEntry" id="label2">
+        <input type="checkbox" name="checkbox" id="task2" onclick="check(2)" />
+        <span id="description2"></span>
+      </label>
+
+      <label class="form-control hiddenEntry" id="label3">
+        <input type="checkbox" name="checkbox" id="task3" onclick="check(3)" />
+        <span id="description3"></span>
+      </label>
+    </form>
+
+    <script>
+      const hiddenEntryClass = "hiddenEntry";
+      let socket = null;
+      let state = {
+        checkMarkHue: 78,
+        tasks: [],
+      };
+
+      function initOverlay() {
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+          socket = new WebSocket("ws://localhost:42753");
+
+          socket.addEventListener("open", () => {
+            console.log("Connected to WebSocket server");
+          });
+
+          socket.addEventListener("message", (event) => {
+            console.log("Message from server:", event.data);
+
+            state = JSON.parse(event.data);
+            hideAllLabels();
+            state.tasks.forEach((task, index) => updateUI(index, task));
+            updateCheckboxColor(state.checkMarkHue);
+          });
+
+          socket.addEventListener("close", () => {
+            console.log("WebSocket connection closed");
+          });
+        }
+      }
+
+      function updateUI(index, task) {
+        const checkbox = document.querySelector(`#task${index}`);
+        const description = document.querySelector(`#description${index}`);
+        const label = document.querySelector(`#label${index}`);
+
+        if (checkbox && description && label) {
+          label.classList.remove(hiddenEntryClass);
+          checkbox.checked = task.done;
+          description.innerHTML = task.description;
+        }
+      }
+
+      function hideAllLabels() {
+        document.querySelectorAll("#mainForm > label").forEach((label) => {
+          label.classList.add(hiddenEntryClass);
+        });
+      }
+
+      function check(index) {
+        const checkbox = document.querySelector(`#task${index}`);
+        const task = state.tasks[index];
+
+        if (checkbox && task) {
+          state.tasks[index].done = checkbox.checked;
+          socket.send(JSON.stringify(state));
+        }
+      }
+
+      function updateCheckboxColor(newColor) {
+        console.log(`Received new coloring number: ${newColor}`);
+        document.documentElement.style.setProperty(
+          "--checkbox-color",
+          `hsl(${newColor}, 68%, 52%)`
+        );
+      }
+
+      initOverlay();
+      setInterval(() => {
+            initOverlay();
+      }, 3000)
+    </script>
+  </body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+
+  <body>
+    <div class="container" id="config">
+      <div class="containerHead">
+        <span class="containerTitle">stream-todo config</span>
+      </div>
+      <div class="containerBody">
+        <table>
+          <tr>
+            <td><input type="checkbox" id="done0" /></td>
+            <td><input type="text" id="task0" /></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" id="done1" /></td>
+            <td><input type="text" id="task1" /></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" id="done2" /></td>
+            <td><input type="text" id="task2" /></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" id="done3" /></td>
+            <td><input type="text" id="task3" /></td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <br />
+              <button id="saveConfig" onclick="saveTasks()">
+                Save all tasks
+              </button>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const MAX_NUMBER_OF_TASKS = 4;
+      let state = {
+        checkMarkHue: 78,
+        tasks: [],
+      };
+
+      let socket = null;
+
+      // TODO: Rewrite this using Vue
+      function initDashboard() {
+        // TODO: In the future, add a way to find out the correct port via REST
+        // TODO: Also add a common library that does things like reconnecting etc.
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+          // TODO: Add error handling
+          socket = new WebSocket("ws://localhost:42753");
+
+          socket.addEventListener("open", () => {
+            console.log("Connected to WebSocket server");
+          });
+
+          socket.addEventListener("message", (event) => {
+            console.log("Message from server:", event.data);
+            state = JSON.parse(event.data);
+
+            clearDashboardUI();
+            state.tasks.forEach((task, index) =>
+              updateDashboardUI(index, task)
+            );
+          });
+
+          socket.addEventListener("close", () => {
+            console.log("WebSocket connection closed");
+          });
+        }
+      }
+
+      function updateDashboardUI(index, task) {
+        const checkbox = document.querySelector(`#done${index}`);
+        const textfield = document.querySelector(`#task${index}`);
+
+        if (checkbox && textfield) {
+          checkbox.checked = task.done;
+          textfield.value = task.description;
+        }
+      }
+
+      function clearDashboardUI() {
+        for (let i = 0; i < MAX_NUMBER_OF_TASKS; i++) {
+          const checkbox = document.querySelector(`#done${i}`);
+          const textfield = document.querySelector(`#task${i}`);
+
+          if (checkbox && textfield) {
+            checkbox.checked = false;
+            textfield.value = "";
+          }
+        }
+      }
+
+      function saveTasks() {
+        const tasks = [];
+
+        for (let i = 0; i < MAX_NUMBER_OF_TASKS; i++) {
+          const checkbox = document.querySelector(`#done${i}`);
+          const textfield = document.querySelector(`#task${i}`);
+
+          if (checkbox && textfield) {
+            if (textfield.value !== "") {
+              tasks.push({
+                done: checkbox.checked,
+                description: textfield.value,
+              });
+            }
+          }
+        }
+
+        state.tasks = tasks;
+        console.log("Sending data to server:", state);
+        socket.send(JSON.stringify(state));
+      }
+
+      initDashboard();
+      setInterval(() => {
+        initDashboard();
+      }, 3000);
+    </script>
+  </body>
+</html>

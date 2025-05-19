@@ -2,8 +2,10 @@ import { Service } from "./Service";
 import { StreamElementsServiceClient } from "../providers/streamelements/StreamElementsServiceClient";
 import { Knex } from "knex";
 import { SQLClient, SQLConfig } from "../providers/sql/SQLClient";
+import { WebSocket } from "ws";
 
 export class SubArchiveService extends Service {
+
   private sqlClient: Knex | undefined = undefined;
   private sqlConfig: SQLConfig;
 
@@ -24,10 +26,6 @@ export class SubArchiveService extends Service {
   }
 
   private readonly table = "public";
-
-  protected onWebSocketServerMessage(_: string): void {
-    // ignore all messages
-  }
 
   private registerEvents() {
     this.streamElementsClient?.onSubscriber(async (data) => {

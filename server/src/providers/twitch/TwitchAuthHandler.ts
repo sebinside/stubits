@@ -11,7 +11,7 @@ export class TwitchAuthHandler {
   private static readonly oAuthURL = "https://id.twitch.tv/oauth2/authorize";
   private static readonly callbackPath = "twitchcallback";
   private static readonly callbackWebsiteHTML =
-    "<html><head><script>//window.close();</script></head><body>Twitch OAuth callback received! You may close this window now.</body></html>";
+    "<html><head><script>window.close();</script></head><body>Twitch OAuth callback received! You may close this window now.</body></html>";
 
   private readonly callbackURL: string;
   private accessToken: AccessToken | undefined;
