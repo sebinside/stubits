@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>stream-info dashboard</title>
+    <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <style>
+      html,
+      body,
+      #container {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      body {
+        background-color: #1e1e1e;
+      }
+      #controls {
+        margin-bottom: 10px;
+        padding-left: 10px;
+        padding-top: 10px;
+      }
+      button {
+        border: 1px solid gray;
+        color: white;
+        background-color: rgb(70, 70, 70);
+      }
+
+      button:active {
+        background-color: rgb(90, 90, 90);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls"><button onclick="saveConfig()">💾 Store config</button></div>
+    <div id="container"></div>
+
+    <script>
+      function initMonaco() {
+        require.config({
+          paths: { vs: "https://unpkg.com/monaco-editor@0.52.2/min/vs" },
+        });
+
+        require(["vs/editor/editor.main"], function () {
+          monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            validate: true,
+            schemas: [
+              {
+                uri: "http://stubits/streaminfo/schema.json",
+                fileMatch: ["*"],
+                schema: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      active: { type: "boolean" },
+                      keyword: { type: "string" },
+                      title: { type: "string" },
+                      category: { type: "string" },
+                      content: { type: "string" },
+                    },
+                    required: ["keyword", "title", "content"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            ],
+          });
+
+          monaco.editor.create(document.getElementById("container"), {
+            language: "json",
+            theme: "vs-dark",
+            automaticLayout: true,
+          });
+        });
+      }
+
+      function saveConfig() {
+        const editor = monaco.editor.getModels()[0];
+        const content = editor.getValue();
+        console.log("Saving config:", content);
+      }
+
+      initMonaco();
+    </script>
+  </body>
+</html>
