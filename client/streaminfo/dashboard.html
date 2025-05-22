@@ -33,10 +33,14 @@
     </style>
   </head>
   <body>
-    <div id="controls"><button onclick="saveConfig()">💾 Store config</button></div>
+    <div id="controls">
+      <button onclick="saveConfig()">💾 Store config</button>
+    </div>
     <div id="container"></div>
 
     <script>
+      let socket = null;
+
       function initMonaco() {
         require.config({
           paths: { vs: "https://unpkg.com/monaco-editor@0.52.2/min/vs" },
@@ -59,6 +63,7 @@
                       title: { type: "string" },
                       category: { type: "string" },
                       content: { type: "string" },
+                      url: { type: "string" }
                     },
                     required: ["keyword", "title", "content"],
                     additionalProperties: false,
@@ -76,13 +81,48 @@
         });
       }
 
+      function initDashboard() {
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+          socket = new WebSocket("ws://localhost:42754");
+
+          socket.addEventListener("open", () => {
+            console.log("Connected to WebSocket server");
+          });
+
+          socket.addEventListener("message", (event) => {
+            console.log("Message from server:", event.data);
+            const editor = monaco.editor.getModels()[0];
+            editor.setValue(event.data);
+          });
+
+          socket.addEventListener("close", () => {
+            console.log("WebSocket connection closed");
+          });
+        }
+      }
+
       function saveConfig() {
         const editor = monaco.editor.getModels()[0];
+
+        const markers = monaco.editor.getModelMarkers({ owner: "json" });
+        if (markers.length > 0) {
+          console.error(
+            "Errors in JSON:",
+            markers.map((m) => m.message).join(" ")
+          );
+          return;
+        }
+
         const content = editor.getValue();
         console.log("Saving config:", content);
+        socket.send(content);
       }
 
       initMonaco();
+      initDashboard();
+      setInterval(() => {
+        initDashboard();
+      }, 3000);
     </script>
   </body>
 </html>

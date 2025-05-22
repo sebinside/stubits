@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Stream Info Overlay</title>
+    <link rel="stylesheet" href="../common/css/all.css" />
+    <link rel="stylesheet" href="overlay.css" />
+  </head>
+
+  <body>
+    <div id="main">
+      <div id="header">
+        <i id="symbol" class="fa-duotone fa-square-info"></i>
+        <span id="windowtitle">Information</span>
+      </div>
+
+      <div id="allcontainers"></div>
+
+      <div id="template">
+        <div class="container" id="REPLACEME">
+          <div class="title"></div>
+          <div class="content"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      /*
+type DisplayMessage = {
+    keyword: string
+    title: string
+    content: string
+}
+
+[{"title":"{!was} mache ich gerade?","content":"Ich spiele {Minecraft Pfusch Block} - eigentlich ist das das Stone Block 2 Modpack, aber ich pfusche viel :)","keyword":"what"}]
+
+*/
+
+      let socket = null;
+
+      function initOverlay() {
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+          socket = new WebSocket("ws://localhost:42755");
+
+          socket.addEventListener("open", () => {
+            console.log("Connected to WebSocket server");
+          });
+
+          socket.addEventListener("message", (event) => {
+            console.log("Message from server:", event.data);
+            const state = JSON.parse(event.data);
+            updateUI(state);
+          });
+
+          socket.addEventListener("close", () => {
+            console.log("WebSocket connection closed");
+          });
+        }
+      }
+
+      function updateUI(state) {
+        stopAnimation();
+        removeAllContainers();
+        addAllContainers(state);
+        startAnimation();
+      }
+
+      const ANIMATION_INTERVAL_IN_MS = 10 * 1000;
+      let timer;
+
+      function startAnimation() {
+        const slides = document.querySelectorAll("#allcontainers .container");
+        let currentSlide = 0;
+        const nextSlide = () => {
+          goToSlide(currentSlide + 1);
+        };
+        timer = setInterval(nextSlide, ANIMATION_INTERVAL_IN_MS);
+        const goToSlide = (s) => {
+          let slide = slides[currentSlide];
+          if (slide) {
+            slide.className = "container";
+          }
+          currentSlide = (s + slides.length) % slides.length;
+          slide = slides[currentSlide];
+          if (slide) {
+            slide.className = "container active";
+          }
+        };
+        nextSlide();
+      }
+
+      function stopAnimation() {
+        clearInterval(timer);
+      }
+
+      function addAllContainers(messages) {
+        for (const message of messages) {
+          addContainer(message.keyword, message.title, message.content);
+        }
+      }
+
+      function removeAllContainers() {
+        const allContainers = document.querySelector("#allcontainers");
+        if (allContainers) {
+          allContainers.innerHTML = "";
+        }
+      }
+
+      function addContainer(keyword, title, content) {
+        const html =
+          document
+            .querySelector("#template")
+            ?.innerHTML.replaceAll("REPLACEME", keyword) || "";
+        document
+          .querySelector("#allcontainers")
+          ?.insertAdjacentHTML("beforeend", html);
+
+        const titleElement = document.querySelector(
+          `#${keyword} :nth-child(1)`
+        );
+        const contentElement = document.querySelector(
+          `#${keyword} :nth-child(2)`
+        );
+
+        if (titleElement) {
+          titleElement.innerHTML = addHighlighting(title, keyword);
+        }
+
+        if (contentElement) {
+          contentElement.innerHTML = addHighlighting(content, keyword);
+        }
+      }
+
+      function addHighlighting(value, type) {
+        return value
+          .replaceAll("{", `<span class="highlight messageType-${type}">`)
+          .replaceAll("}", "</span>");
+      }
+
+      initOverlay();
+      setInterval(() => {
+        initOverlay();
+      }, 3000);
+    </script>
+  </body>
+</html>
