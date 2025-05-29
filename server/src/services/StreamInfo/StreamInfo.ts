@@ -1,243 +1,221 @@
 import { ApiClient } from "@twurple/api";
+import { WebSocket, WebSocketServer } from "ws";
+import { Logger } from "../../logger";
 import { TwitchChatClient } from "../../providers/twitch/TwitchChatClient";
 import { Service } from "../Service";
-import { Logger } from "../../logger";
-import { StreamInfoConfig } from "./types";
-import { DEFAULT_CONFIG } from "./DefaultMessages";
+import { DEFAULT_CATEGORY, DEFAULT_CONFIG } from "./defaults";
+import { DisplayMessage, MessageType, MessageTypeKeys, StreamInfoConfig } from "./types";
 
 export class StreamInfo extends Service {
 
     private currentConfig: Array<StreamInfoConfig> = DEFAULT_CONFIG;
+    private currentCategory: string = DEFAULT_CATEGORY;
+    private overlayWebSocketServer: WebSocketServer | undefined = undefined;
 
-    constructor(public readonly webSocketPort: number, private readonly twitchChatClient: TwitchChatClient, private readonly twitchApiClient: ApiClient, private readonly logger: Logger) {
-        super(webSocketPort);
+    constructor(public readonly dashboardWebSocketPort: number, public readonly overlayWebSocketPort: number, private readonly twitchChatClient: TwitchChatClient, private readonly twitchApiClient: ApiClient, private readonly userName: string, private readonly logger: Logger) {
+        super(dashboardWebSocketPort);
+        this.setupAdditionalWebSocketServer()
+    }
+
+    private setupAdditionalWebSocketServer(): void {
+        // FIXME: Find proper solution for the code duplication
+        this.overlayWebSocketServer = new WebSocketServer({ port: this.overlayWebSocketPort });
+        console.log(
+            `Additional WebSocket server of service "${this.constructor.name}" started on port ${this.overlayWebSocketPort}`
+        );
+
+        this.overlayWebSocketServer.on("connection", (ws: WebSocket) => {
+            console.log(`Client connected to service "${this.constructor.name}" (overlay)`);
+            this.onOverlayWebSocketOpenConnection(ws);
+
+            ws.on("message", (message) => {
+                console.log(`Service "${this.constructor.name}" received: ${message} (from overlay)`);
+                this.onOverlayWebSocketServerMessage(ws, message.toString());
+            });
+
+            ws.on("close", () => {
+                console.log(
+                    `Client disconnected from service "${this.constructor.name}" (overlay)`
+                );
+            });
+        });
     }
 
     public run(): void {
-        this.initWebSocket();
+        this.initApiClient();
         this.initChatBot();
-    }
-
-    private initWebSocket(): void {
-    }
-
-    private initChatBot(): void {
-    }
-}
-
-/*
-export class MessageController {
-    private static readonly REPLICANT_ID_CURRENT_CATEGORY: string = "streaminfo.currentcategory";
-    private static readonly REPLICANT_ID_ALL_MESSAGES: string = "streaminfo.allmessages";
-    private static readonly REPLICANT_ID_CURRENT_MESSAGES: string = "streaminfo.currentmessages";
-    private static readonly REPLICANT_ID_CONFIGS: string = "streaminfo.config";
-
-    private static readonly DEFAULT_INFO_MESSAGE: string = "Ich bin live!";
-
-    private currentCategoryReplicant: ReplicantServer<string>;
-    private allMessagesReplicant: ReplicantServer<Record<string, DisplayMessage>>;
-    private currentMessagesReplicant: ReplicantServer<Record<string, DisplayMessage>>;
-    private configsReplicant: ReplicantServer<Array<StreamInfoConfig>>;
-
-    constructor(private nodecg: NodeCG) {
-        this.currentCategoryReplicant = this.initReplicant(MessageController.REPLICANT_ID_CURRENT_CATEGORY, DefaultMessages.REPLICANT_DEFAULT_CURRENT_CATEGORY);
-
-        this.currentMessagesReplicant = this.initReplicant(MessageController.REPLICANT_ID_CURRENT_MESSAGES, DefaultMessages.REPLICANT_DEFAULT_CURRENT_MESSAGES);
-
-        this.allMessagesReplicant = this.initReplicant(MessageController.REPLICANT_ID_ALL_MESSAGES, DefaultMessages.REPLICANT_DEFAULT_ALL_MESSAGES);
-        this.allMessagesReplicant.value = DefaultMessages.REPLICANT_DEFAULT_ALL_MESSAGES;
-
-        this.configsReplicant = this.initReplicant(MessageController.REPLICANT_ID_CONFIGS, DefaultMessages.REPLICANT_DEFAULT_CONFIGS);
-
-        this.currentCategoryReplicant.on("change", () => this.updateCurrentMessages());
-        this.configsReplicant.on("change", () => this.updateCurrentMessages());
-    }
-
-    private initReplicant<T>(id: string, defaultValue: T) {
-        return this.nodecg.Replicant<T>(id, { defaultValue: defaultValue });
-    }
-
-    public getInfoMessage(category: string): string {
-        const config = this.getActiveConfigForCategory(category);
-
-        let message = MessageController.DEFAULT_INFO_MESSAGE;
-
-        if (config) {
-            message = config.description ? config.description : message;
-            message = config.url ? `${message} | Mehr Infos: ${config.url}` : message;
-        }
-
-        return MessageController.removeBrackets(message);
-    }
-
-    public getCurrentInfoMessage(): string {
-        return this.getInfoMessage(this.getCurrentCategory());
-    }
-
-    private getActiveConfigForCategory(category: string): StreamInfoConfig | undefined {
-        return this.configsReplicant.value.find(it => it.category === category && it.active)
-    }
-
-    public setCurrentCategory(category: string): void {
-        if (this.currentCategoryReplicant.value !== category) {
-            this.currentCategoryReplicant.value = category;
-            this.nodecg.log.info(`Updated category to ${category}.`)
-        }
-    }
-
-    public getCurrentCategory(): string {
-        return this.currentCategoryReplicant.value;
-    }
-
-    public getCurrentURL(): string | undefined {
-        const category = this.currentCategoryReplicant.value;
-        return this.getActiveConfigForCategory(category)?.url;
-    }
-
-    private updateCurrentMessages() {
-        const category = this.currentCategoryReplicant.value;
-        const config = this.getActiveConfigForCategory(category);
-
-        const whatMessage: DisplayMessage = {
-            title: "{!was} mache ich gerade?",
-            content: config?.description || "",
-            type: "what"
-        }
-
-        const currentMessages: Record<string, DisplayMessage> = {};
-        config?.messageIds.forEach(id => {
-            const message = this.allMessagesReplicant.value[id];
-
-            if (message) {
-                currentMessages[id] = { ...message };
-            } else {
-                this.nodecg.log.warn(`Unable to find message with ID ${id}.`);
-            }
-        });
-
-        currentMessages["what"] = whatMessage;
-        this.currentMessagesReplicant.value = currentMessages;
-    }
-
-    public getFirstCurrentMessageForCategory(category: string) {
-        const currentMessages = this.currentMessagesReplicant.value;
-
-        for (const entry of Object.values(currentMessages)) {
-            if (entry.type === category) {
-                return MessageController.removeBrackets(entry.content);
-            }
-        }
-
-        return undefined;
-    }
-
-    private static removeBrackets(message: string) {
-        return message.replaceAll("{", "").replaceAll("}", "");
-    }
-}
-
-export class StreamInfoChatBot {
-
-    constructor(
-        private messageController: MessageController,
-        private chatClient: ServiceProvider<TwitchChatServiceClient> | undefined,
-        private nodecg: NodeCG) {
-        this.nodecg.log.info("Created stream info chat bot.");
-    }
-
-    initChatBot() {
-        this.initMainCommand();
-        this.initURLCommands();
-        this.initSimpleCommands();
-    }
-
-    private initMainCommand() {
-        ChatBot.getInstance().registerCommand("was", false, this.chatClient, this.nodecg,
-            (_: string, __: string, msg) => {
-                const reply = this.messageController.getCurrentInfoMessage();
-                this.chatClient?.getClient()?.say(ChatBot.CHANNEL, reply, { replyTo: msg });
-            });
-    }
-
-    private initURLCommands() {
-        ChatBot.getInstance().registerCommand("wo", false, this.chatClient, this.nodecg, 
-        (_: string, __: string, msg) => {
-            const url = this.messageController.getCurrentURL();
-            if(url) {
-                const reply = `Den Code findest du hier: ${url}`;
-                this.chatClient?.getClient()?.say(ChatBot.CHANNEL, reply, { replyTo: msg });
-            } 
-        }); 
-
-        ChatBot.getInstance().registerCommand("code", false, this.chatClient, this.nodecg, 
-        (_: string, __: string, msg) => {
-            const url = this.messageController.getCurrentURL();
-            if(url && url.startsWith("https://github.com/")) {
-                const reply = `Zur interaktiven Code-Ansicht: ${url.replace("https://github.com/", "https://github.dev/")}`;
-                this.chatClient?.getClient()?.say(ChatBot.CHANNEL, reply, { replyTo: msg });
-            } 
-        }); 
-    }
-    
-    private initSimpleCommands() {
-        const commandsAndCategories = new Map<string, string>([
-            ["wer", "who"],
-            ["wie", "how"],
-            ["projekt", "project"],
-            ["editor", "editor"],
-            ["sprache", "language"],
-            ["theme", "editor"]
-        ]);
-
-        for(const [command, category] of commandsAndCategories) {
-            ChatBot.getInstance().registerCommand(command, false, this.chatClient, this.nodecg,
-            (_: string, __: string, msg) => {
-                const currentMessage = this.messageController.getFirstCurrentMessageForCategory(category);
-                if(currentMessage) {
-                    this.chatClient?.getClient()?.say(ChatBot.CHANNEL, currentMessage, { replyTo: msg });
-                }
-            });
-        }
-    }
-}
-
-export class StreamInfoManager extends Manager {
-    constructor(
-        private chatClient: ServiceProvider<TwitchChatServiceClient> | undefined,
-        private twitchApiClient: ServiceProvider<TwitchApiServiceClient> | undefined,
-        protected nodecg: NodeCG,
-    ) {
-        super("stream-info", nodecg);
-        this.register(this.chatClient, "Twitch chat client", () => this.initChatClient());
-        this.register(this.twitchApiClient, "Twitch api client", async () => this.initApiClient());
-        this.initReadyListener(this.twitchApiClient);
-    }
-
-    public static readonly REFRESH_INTERVAL_IN_MS = 10 * 1000;
-    private messageController = new MessageController(this.nodecg);
-    private streamInfoChatBot = new StreamInfoChatBot(this.messageController, this.chatClient, this.nodecg);
-
-    private initChatClient(): void {
-        this.streamInfoChatBot.initChatBot();
     }
 
     private initApiClient(): void {
         setInterval(async () => {
             const category = await this.requestCurrentCategory();
             if (category) {
-                this.messageController.setCurrentCategory(category);
+                this.logger.run.tile.debug("StreamInfo", `Received category: ${category}`);
+
+                if (this.currentCategory !== category) {
+                    this.logger.run.tile.info("StreamInfo", `Updating current category to: ${category}`);
+                    this.currentCategory = category;
+                    this.sendUpdatedDisplayMessages();
+                }
             }
-            
-        }, StreamInfoManager.REFRESH_INTERVAL_IN_MS);
+        }, 10000);
     }
 
-    private async requestCurrentCategory() {
-        const user = await this.twitchApiClient?.getClient()?.helix.users.getMe();
+
+    private async requestCurrentCategory(): Promise<string | undefined> {
+        const user = await this.twitchApiClient.users.getUserByName(this.userName);
+        if (!user) {
+            this.logger.run.tile.warn("StreamInfo", `User ${this.userName} not found.`);
+            return undefined;
+        }
+
         const stream = await user?.getStream();
+        if (!stream) {
+            this.logger.run.tile.warn("StreamInfo", `No active stream found for user ${this.userName}.`);
+            return undefined;
+        }
+
         const category = await stream?.getGame();
         return category?.name;
     }
+
+    protected onWebSocketServerMessage(_: WebSocket, message: string): void {
+        this.logger.run.tile.debug("StreamInfo", `Received message from dashboard.`);
+        const parsedMessage = JSON.parse(message) as StreamInfoConfig[];
+
+        if (!Array.isArray(parsedMessage)) {
+            this.logger.run.tile.warn("StreamInfo", "Received invalid message format.");
+            return;
+        }
+
+        if (!parsedMessage.every(config => this.isConfigValid(config))) {
+            this.logger.run.tile.warn("StreamInfo", "Received invalid config. Skipping update.");
+            return;
+        }
+
+        this.currentConfig = parsedMessage;
+        this.logger.run.tile.info("StreamInfo", `Updated current config with ${this.currentConfig.length} entries.`);
+        this.sendUpdatedDisplayMessages();
+    }
+
+    private sendUpdatedDisplayMessages(): void {
+        const relevantMessages = this.filterRelevantMessages();
+        this.logger.run.tile.info("StreamInfo", `Sending ${relevantMessages.length} relevant messages to clients.`);
+
+        this.overlayWebSocketServer?.clients.forEach((ws: WebSocket) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(relevantMessages));
+            }
+        });
+    }
+
+    protected onWebSocketOpenConnection(ws: WebSocket): void {
+        ws.send(JSON.stringify(this.currentConfig))
+    };
+
+    private onOverlayWebSocketServerMessage(ws: WebSocket, message: string): void {
+        // Ignore messages from the overlay
+    }
+
+    private onOverlayWebSocketOpenConnection(ws: WebSocket): void {
+        this.sendUpdatedDisplayMessages();
+    }
+
+    private filterRelevantMessages(): Array<DisplayMessage> {
+        const relevantConfigs = this.currentConfig.filter(config => config.active && (config.category === this.currentCategory || !config.category));
+        return relevantConfigs.map(config => ({
+            keyword: config.keyword,
+            title: config.title,
+            content: config.content
+        }));
+    }
+
+    private isConfigValid(config: StreamInfoConfig): boolean {
+        if (!config.keyword || !config.title || !config.content) {
+            this.logger.run.tile.warn("StreamInfo", "Invalid config: Missing required fields.");
+            return false;
+        }
+        if (config.category && MessageTypeKeys.includes(config.category) === false) {
+            this.logger.run.tile.warn("StreamInfo", `Invalid config: Category "${config.category}" is not a valid message type.`);
+        }
+
+        // TODO: Check duplicates (requires to check all configs at once!)!
+
+        return true;
+    }
+
+    private initChatBot(): void {
+        const chatBot = this.twitchChatClient.getChatBot();
+
+        chatBot.registerCommand("was", false,
+            (_: string, __: string, msg) => {
+                const reply = this.getCurrentInfoMessage();
+
+                if (reply) {
+                    this.twitchChatClient.getChatClient().say(this.twitchChatClient.channel, StreamInfo.removeBrackets(reply.content), { replyTo: msg });
+                }
+            });
+
+        chatBot.registerCommand("wo", false,
+            (_: string, __: string, msg) => {
+                const url = this.getCurrentURL();
+
+                if (url) {
+                    const reply = `Den Code findest du hier: ${url}`;
+                    this.twitchChatClient.getChatClient().say(this.twitchChatClient.channel, reply, { replyTo: msg });
+                }
+            });
+
+        chatBot.registerCommand("code", false,
+            (_: string, __: string, msg) => {
+                const url = this.getCurrentURL();
+
+                if (url && url.startsWith("https://github.com/")) {
+                    const reply = `Zur interaktiven Code-Ansicht: ${url.replace("https://github.com/", "https://github.dev/")}`;
+                    this.twitchChatClient.getChatClient().say(this.twitchChatClient.channel, reply, { replyTo: msg });
+                }
+            });
+
+        const commandsAndCategories = new Map<string, MessageType>([
+            ["wer", "who"],
+            ["wie", "how"],
+            ["editor", "editor"],
+            ["sprache", "language"],
+        ]);
+
+        for (const [command, keyword] of commandsAndCategories) {
+            chatBot.registerCommand(command, false,
+                (_: string, __: string, msg) => {
+                    const currentMessage = this.getMessageForKeyword(keyword);
+
+                    if (currentMessage) {
+                        this.twitchChatClient.getChatClient().say(this.twitchChatClient.channel, StreamInfo.removeBrackets(currentMessage.content), { replyTo: msg });
+                    }
+                });
+        }
+    }
+
+    getMessageForKeyword(keyword: MessageType): StreamInfoConfig | undefined {
+        const candidates = this.currentConfig.filter(config => config.keyword === keyword && config.active && (config.category === this.currentCategory || !config.category));
+
+        if (candidates.length === 0) {
+            return undefined;
+        } else if (candidates.length > 1) {
+            this.logger.run.tile.warn("StreamInfo", `Multiple '${keyword}' messages found for category '${this.currentCategory}'. Returning first one.`);
+        }
+
+        return candidates[0];
+    }
+
+    getCurrentInfoMessage(): StreamInfoConfig | undefined {
+        return this.getMessageForKeyword("what");
+    }
+
+    getCurrentURL(): string | undefined {
+        return this.getCurrentInfoMessage()?.url;
+    }
+
+    private static removeBrackets(message: string) {
+        return message.replaceAll("{", "").replaceAll("}", "");
+    }
 }
-
-
-*/

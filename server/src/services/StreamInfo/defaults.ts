@@ -1,5 +1,8 @@
 import { StreamInfoConfig } from "./types";
 
+export const DEFAULT_CATEGORY: string = "Software and Game Development";
+export const DEFAULT_INFO_MESSAGE: string = "Ich bin live!";
+
 export const DEFAULT_CONFIG: Array<StreamInfoConfig> =
     [
         {

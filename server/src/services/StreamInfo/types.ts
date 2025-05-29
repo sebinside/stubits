@@ -1,4 +1,5 @@
-export type MessageType = "what" | "where" | "who" | "misc" | "language" | "editor" | "how"
+export const MessageTypeKeys = ["what", "where", "who", "misc", "language", "editor", "how"];
+export type MessageType = typeof MessageTypeKeys[number];
 
 export type DisplayMessage = {
     keyword: MessageType
@@ -8,7 +9,7 @@ export type DisplayMessage = {
 
 export type StreamInfoConfig = {
     active?: boolean
-    keyword: string
+    keyword: MessageType
     title: string
     category?: string
     content: string

@@ -121,8 +121,10 @@ twitchAuth.getAuthProvider().then((authProvider) => {
 
       const streamInfo = new StreamInfo(
         42754,
+        42755,
         twitchChatClient,
         apiClient,
+        "skate702",
         logger
       );
 
