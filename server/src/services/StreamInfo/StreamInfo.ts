@@ -1,17 +1,31 @@
+import { ApiClient } from "@twurple/api";
+import { TwitchChatClient } from "../../providers/twitch/TwitchChatClient";
 import { Service } from "../Service";
+import { Logger } from "../../logger";
+import { StreamInfoConfig } from "./types";
+import { DEFAULT_CONFIG } from "./DefaultMessages";
 
 export class StreamInfo extends Service {
+
+    private currentConfig: Array<StreamInfoConfig> = DEFAULT_CONFIG;
+
+    constructor(public readonly webSocketPort: number, private readonly twitchChatClient: TwitchChatClient, private readonly twitchApiClient: ApiClient, private readonly logger: Logger) {
+        super(webSocketPort);
+    }
+
     public run(): void {
-        throw new Error("Method not implemented.");
+        this.initWebSocket();
+        this.initChatBot();
+    }
+
+    private initWebSocket(): void {
+    }
+
+    private initChatBot(): void {
     }
 }
+
 /*
-Copy paste code from the original implementation, to be cleaned and heavily simplified
-
-    // Required scopes: none
-    const twitchApi = requireService<TwitchApiServiceClient>(nodecg, "twitch-api");
-    const chatClient = requireService<TwitchChatServiceClient>(nodecg, "twitch-chat");
-
 export class MessageController {
     private static readonly REPLICANT_ID_CURRENT_CATEGORY: string = "streaminfo.currentcategory";
     private static readonly REPLICANT_ID_ALL_MESSAGES: string = "streaminfo.allmessages";

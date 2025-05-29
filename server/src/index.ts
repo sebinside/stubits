@@ -14,6 +14,8 @@ import { StreamBar } from "./services/StreamBar";
 import { StreamElementsServiceClient } from "./providers/streamelements/StreamElementsServiceClient";
 import { StaticAuthProvider } from "@twurple/auth";
 import { StreamTodo } from "./services/StreamTodo";
+import { StreamInfo } from "./services/StreamInfo/StreamInfo";
+import { ApiClient } from "@twurple/api";
 
 config({ path: "../../.env" });
 const basePort = 42750;
@@ -112,6 +114,19 @@ twitchAuth.getAuthProvider().then((authProvider) => {
       );
 
       streamTodo.run();
+
+      const apiClient = new ApiClient({
+        authProvider: authProvider
+      });
+
+      const streamInfo = new StreamInfo(
+        42754,
+        twitchChatClient,
+        apiClient,
+        logger
+      );
+
+      streamInfo.run();
     });
   };
 });
