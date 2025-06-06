@@ -122,7 +122,8 @@ export class StreamInfo extends Service {
     }
 
     private filterRelevantMessages(): Array<DisplayMessage> {
-        const relevantConfigs = this.currentConfig.filter(config => config.active && (config.category === this.currentCategory || !config.category));
+        // FIXME: Code duplication with getMessageForKeyword
+        const relevantConfigs = this.currentConfig.filter(config => (config.active === true || config.active === undefined) && (config.category === this.currentCategory || !config.category));
         return relevantConfigs.map(config => ({
             keyword: config.keyword,
             title: config.title,
@@ -135,7 +136,7 @@ export class StreamInfo extends Service {
             this.logger.run.tile.warn("StreamInfo", "Invalid config: Missing required fields.");
             return false;
         }
-        if (config.category && MessageTypeKeys.includes(config.category) === false) {
+        if (config.keyword && MessageTypeKeys.includes(config.keyword) === false) {
             this.logger.run.tile.warn("StreamInfo", `Invalid config: Category "${config.category}" is not a valid message type.`);
         }
 
@@ -161,7 +162,7 @@ export class StreamInfo extends Service {
                 const url = this.getCurrentURL();
 
                 if (url) {
-                    const reply = `Den Code findest du hier: ${url}`;
+                    const reply = `Alles findest du hier: ${url}`;
                     this.twitchChatClient.getChatClient().say(this.twitchChatClient.channel, reply, { replyTo: msg });
                 }
             });
@@ -196,7 +197,7 @@ export class StreamInfo extends Service {
     }
 
     getMessageForKeyword(keyword: MessageType): StreamInfoConfig | undefined {
-        const candidates = this.currentConfig.filter(config => config.keyword === keyword && config.active && (config.category === this.currentCategory || !config.category));
+        const candidates = this.currentConfig.filter(config => config.keyword === keyword && (config.active === true || config.active === undefined) && (config.category === this.currentCategory || !config.category));
 
         if (candidates.length === 0) {
             return undefined;

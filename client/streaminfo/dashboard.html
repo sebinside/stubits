@@ -40,6 +40,7 @@
 
     <script>
       let socket = null;
+      let monacoEditor = null;
 
       function initMonaco() {
         require.config({
@@ -47,6 +48,7 @@
         });
 
         require(["vs/editor/editor.main"], function () {
+          monacoEditor = monaco;
           monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
             schemas: [
@@ -63,7 +65,7 @@
                       title: { type: "string" },
                       category: { type: "string" },
                       content: { type: "string" },
-                      url: { type: "string" }
+                      url: { type: "string" },
                     },
                     required: ["keyword", "title", "content"],
                     additionalProperties: false,
@@ -73,15 +75,20 @@
             ],
           });
 
-          monaco.editor.create(document.getElementById("container"), {
+          const editorInstance = monaco.editor.create(document.getElementById("container"), {
             language: "json",
             theme: "vs-dark",
             automaticLayout: true,
           });
+
+          initDashboard(editorInstance);
+          setInterval(() => {
+            initDashboard(editorInstance);
+          }, 3000);
         });
       }
 
-      function initDashboard() {
+      function initDashboard(editorInstance) {
         if (!socket || socket.readyState === WebSocket.CLOSED) {
           socket = new WebSocket("ws://localhost:42754");
 
@@ -90,9 +97,9 @@
           });
 
           socket.addEventListener("message", (event) => {
-            console.log("Message from server:", event.data);
-            const editor = monaco.editor.getModels()[0];
-            editor.setValue(event.data);
+            console.log("Message from server.");
+            editorInstance.setValue(event.data);
+            editorInstance.getAction('editor.action.formatDocument').run();
           });
 
           socket.addEventListener("close", () => {
@@ -102,9 +109,9 @@
       }
 
       function saveConfig() {
-        const editor = monaco.editor.getModels()[0];
+        const editor = monacoEditor.editor.getModels()[0];
 
-        const markers = monaco.editor.getModelMarkers({ owner: "json" });
+        const markers = monacoEditor.editor.getModelMarkers({ owner: "json" });
         if (markers.length > 0) {
           console.error(
             "Errors in JSON:",
@@ -114,15 +121,11 @@
         }
 
         const content = editor.getValue();
-        console.log("Saving config:", content);
+        console.log("Saving config.");
         socket.send(content);
       }
 
       initMonaco();
-      initDashboard();
-      setInterval(() => {
-        initDashboard();
-      }, 3000);
     </script>
   </body>
 </html>

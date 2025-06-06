@@ -1,6 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 
 // TODO: Add StatefulService that has a state that is broadcasted to all clients
+// TODO: Handling of websocket servers should not be realized using inheritance, but rather composition
 export abstract class Service {
   private wss: WebSocketServer | undefined = undefined;
   protected webSockets: Set<WebSocket> = new Set();
