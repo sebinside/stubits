@@ -1,1 +1,1 @@
-// Endpoints for the UI (to deal with credentials, available tiles and services, etc.)
+// Endpoints for the UI (to deal with credentials, available tiles and services, buttons for recreating all services, starting all services and tiles, etc.)

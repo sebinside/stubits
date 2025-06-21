@@ -1,14 +1,25 @@
-export interface Tile {
-    setup(): void;
-    start(): void;
-    stop(): void;
-    isRunning(): boolean;
-    getName(): string;
-    getWebSocketChannels(): string[];
+import { Logger } from '../core/logger';
+
+export abstract class Tile {
+    protected isTileRunning = false;
+
+    // tileName can be the default name of the tile type or a custom name if multiple instances are needed
+    constructor(private readonly config: Record<string, string>, private readonly logger: Logger, private readonly tileName: string) {
+        this.logger.setup.tile.info(tileName, `Tile ${tileName} created.`);
+
+        if (!this.config || Object.keys(this.config).length === 0) {
+            this.logger.setup.tile.debug(tileName, "No configuration provided for this tile.");
+        }
+    }
+
+    isRunning(): boolean {
+        return this.isTileRunning;
+    }
+    getName(): string {
+        return this.tileName;
+    }
+
+    abstract start(): void;
+    abstract stop(): void;
+    abstract getChannelNames(): string[];
 }
-
-// TODO: Tiles could probably be an abstract class
-// each tile has a d default name but can be changed if multiple instances are needed, last parameter in the constructor
-
-// Lifecycle: credentials in constructor, setup creates the tile, start starts it
-// TODO: Is this applicable? Can we remove the setup method?
