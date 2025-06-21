@@ -1,0 +1,1 @@
+// Endpoints for the UI (to deal with credentials, available tiles and services, etc.)
