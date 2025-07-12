@@ -18,8 +18,10 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "knex": "^3.1.0",
+    "lowdb": "^7.0.1",
     "mysql": "^2.18.1",
     "open": "^10.1.2",
+    "read": "^4.1.0",
     "socket.io-client": "^4.8.1",
     "spotify-web-api-node": "^5.0.2",
     "ws": "^8.18.2"

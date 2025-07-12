@@ -1,3 +1,6 @@
+# do not commit database
+db/
+
 # Logs
 logs
 *.log

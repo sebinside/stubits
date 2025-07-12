@@ -7,13 +7,16 @@ export abstract class Service {
     constructor(private readonly credentials: Record<string, string>, private readonly logger: Logger, private readonly serviceName: string) {
         this.logger.setup.service.info(serviceName, `Service ${serviceName} created.`);
 
-        if (this.getRequiredCredentialKeys().length > 0) {
-            const missingKeys = this.getRequiredCredentialKeys().filter(key => !this.credentials[key]);
-            if (missingKeys.length > 0) {
-                this.logger.setup.service.warn(serviceName, `Missing required credentials: ${missingKeys.join(', ')}`);
-            }
+        const missingKeys = this.getMissingCredentialKeys();
+        if (missingKeys.length > 0) {
+            this.logger.setup.service.warn(serviceName, `Missing required credentials: ${missingKeys.join(', ')}`);
         }
     }
+
+    getMissingCredentialKeys(): string[] {
+        return this.getRequiredCredentialKeys().filter(key => !this.credentials[key]);
+    }
+    abstract getRequiredCredentialKeys(): string[];
 
     isRunning(): boolean {
         return this.isServiceRunning;
@@ -24,7 +27,7 @@ export abstract class Service {
 
     abstract start(): void;
     abstract stop(): void;
-    abstract getRequiredCredentialKeys(): string[];
+
 }
 
 // TODO: What about the central management of bot commands + award redemptions? Move to the twitch(chat) service?
