@@ -43,11 +43,13 @@ export class DatabaseManager {
     #credentialsDB: Low<CredentialsDatabase>;
 
     constructor(private readonly logger: Logger, private readonly dbBasePath: string = "db") {
-        logger.setup.core.info(DatabaseManager.loggerComponentName, `Creating database with base path: "/${dbBasePath}"`);
+        logger.setup.core.info(DatabaseManager.loggerComponentName, `Creating database manager with base path: "/${dbBasePath}".`);
 
         if (!this.databaseExists()) {
             fs.mkdirSync(this.dbBasePath, { recursive: true });
             logger.setup.core.info(DatabaseManager.loggerComponentName, 'Database not found, creating new database files.');
+        } else {
+            logger.setup.core.info(DatabaseManager.loggerComponentName, 'Database files found, using existing database.');
         }
 
         this.#configDB = new Low<ConfigDatabase>(
@@ -73,7 +75,7 @@ export class DatabaseManager {
     public async initialize(): Promise<boolean> {
         await this.askForPassword();
         if (!this.#credentialsPassword) {
-            this.logger.setup.core.error(DatabaseManager.loggerComponentName, "No password provided. Cannot initialize database.");
+            this.logger.setup.core.error(DatabaseManager.loggerComponentName, "No password provided. Cannot initialize database manager.");
             return false;
         }
 
@@ -103,15 +105,15 @@ export class DatabaseManager {
         try {
             const decryptedTestValue = this.decryptValue(this.#credentialsDB.data.testValue);
             if (decryptedTestValue !== DatabaseManager.testValue) {
-                this.logger.setup.core.error(DatabaseManager.loggerComponentName, "Password incorrect. Aborting database initialization.");
+                this.logger.setup.core.error(DatabaseManager.loggerComponentName, "Password incorrect. Aborting database manager initialization.");
                 return false;
             }
         } catch (_) {
-            this.logger.setup.core.error(DatabaseManager.loggerComponentName, "Password incorrect. Aborting database initialization.");
+            this.logger.setup.core.error(DatabaseManager.loggerComponentName, "Password incorrect. Aborting database manager initialization.");
             return false;
         }
 
-        this.logger.setup.core.info(DatabaseManager.loggerComponentName, "Database initialized successfully.");
+        this.logger.setup.core.info(DatabaseManager.loggerComponentName, "Database manager initialized successfully.");
         return true;
     }
 

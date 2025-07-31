@@ -8,7 +8,6 @@ const logger = new Logger("debug");
 const db = new DatabaseManager(logger);
 const comm = new CommunicationManager(logger);
 initializeDB().then(() => {
-    logger.setup.core.info("index.ts", "Database initialized successfully.");
     comm.initialize();
 }).catch((error) => {
     logger.setup.core.error("index.ts", `Failed to initialize database: ${error.message}`);
