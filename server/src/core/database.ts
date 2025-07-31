@@ -35,6 +35,7 @@ export class DatabaseManager {
     private static readonly configFilePath = "config.json";
     private static readonly testValue = "StUBiTS";
 
+    // Using private fields instead of accessibility modifiers for an extra secure feeling
     #credentialsPassword: string = "";
     #credentialsKey: Buffer | undefined;
     #credentialsSalt: Buffer | undefined;
