@@ -73,8 +73,13 @@ export class DatabaseManager {
             fs.existsSync(path.join(this.dbBasePath, DatabaseManager.configFilePath));
     }
 
-    public async initialize(): Promise<boolean> {
-        await this.askForPassword();
+    public async initialize(password?: string): Promise<boolean> {
+        if (password) {
+            this.#credentialsPassword = password;
+        } else {
+            await this.askForPassword();
+        }
+
         if (!this.#credentialsPassword) {
             this.logger.setup.core.error(DatabaseManager.loggerComponentName, "No password provided. Cannot initialize database manager.");
             return false;

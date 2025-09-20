@@ -1,5 +1,5 @@
 {
-  "name": "stubits-minimal-server",
+  "name": "stubits-server",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "watch": "nodemon src/index.ts"
+    "watch": "nodemon src/index.ts",
+    "test": "vitest"
   },
   "author": "sebinside",
   "license": "MIT",
@@ -34,6 +35,7 @@
     "@types/ws": "^8.18.1",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }
