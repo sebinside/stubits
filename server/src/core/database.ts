@@ -69,7 +69,7 @@ export class DatabaseManager {
     }
 
     private databaseExists(): boolean {
-        return fs.existsSync(path.join(this.dbBasePath, DatabaseManager.credentialsFilePath)) &&
+        return fs.existsSync(path.join(this.dbBasePath, DatabaseManager.credentialsFilePath)) ||
             fs.existsSync(path.join(this.dbBasePath, DatabaseManager.configFilePath));
     }
 
