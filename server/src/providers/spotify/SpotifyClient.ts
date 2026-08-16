@@ -21,7 +21,7 @@ export class SpotifyClient {
     if (scopes === undefined || scopes.length === 0) {
       throw Error("Scopes are empty. Please specify at least one scope!");
     }
-    this.callbackUrl = `http://localhost:${this.port}${this.callbackEndpoint}`;
+    this.callbackUrl = `http://127.0.0.1:${this.port}${this.callbackEndpoint}`;
   }
 
   async createClient(): Promise<SpotifyWebApi> {

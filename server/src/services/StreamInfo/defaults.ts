@@ -8,7 +8,7 @@ export const DEFAULT_CONFIG: Array<StreamInfoConfig> =
         {
             "keyword": "who",
             "title": "{!wer} bin ich eigentlich?",
-            "content": "Ich bin Sebastian, Postdoc am KIT in Karlsruhe. In meiner Freizeit streame ich Coding-Projekte und probiere neue Technologien aus."
+            "content": "Ich bin Sebastian, Senior Software Engineer in der Automobilbranche, davor Postdoc am KIT in Karlsruhe."
         },
         {
             "keyword": "where",
@@ -23,6 +23,13 @@ export const DEFAULT_CONFIG: Array<StreamInfoConfig> =
             "category": "Software and Game Development",
             "title": "{!welches} nächste Ziel?",
             "content": "Die {aktuellen Aufgaben} findest du unten links. Für einen besseren Überblick, schau auf Github vorbei! Einfach {!wo} in den Chat!"
+        },
+        {
+            "keyword": "language",
+            "active": false,
+            "category": "Software and Game Development",
+            "title": "{!welche} Sprache?",
+            "content": "Das ist {AutoHotkey}, eine Sprache zum Erstellen neuer, super nützlicher Shortcuts und Hotkeys und auch zur Automatisierung von UI."
         },
         {
             "keyword": "language",
@@ -47,14 +54,7 @@ export const DEFAULT_CONFIG: Array<StreamInfoConfig> =
         },
         {
             "keyword": "what",
-            "active": false,
-            "category": "Software and Game Development",
-            "title": "{!was} ist machst du da?",
-            "content": "Ich erweitere mein eigenes {Adobe Premiere Plugin} \"PremiereRemote\" - Damit kann ich Premiere von außen fernsteuern!"
-        },
-        {
-            "keyword": "what",
-            "active": false,
+            "active": true,
             "category": "Software and Game Development",
             "title": "{!was} machst du da?",
             "content": "Ich erweitere mein eigenes {Adobe Premiere Plugin} \"PremiereRemote\" - Damit kann ich Premiere von außen fernsteuern!",
@@ -70,14 +70,14 @@ export const DEFAULT_CONFIG: Array<StreamInfoConfig> =
         },
         {
             "keyword": "what",
-            "active": true,
+            "active": false,
             "category": "Software and Game Development",
             "title": "{!was} machst du da?",
             "content": "Ich mache... {Dinge}."
         },
         {
             "keyword": "what",
-            "active": true,
+            "active": false,
             "category": "Minecraft",
             "title": "{!was} machst du da?",
             "content": "Das Modpack heißt {FTB OceanBlock 1}, oder ganz einfach: Minecraft Wasser.",
